@@ -41,11 +41,14 @@
 
 import { SQSEvent } from "aws-lambda";
 import { DynamoAppointmentRepository } from "../../infrastructure/repositories/DynamoAppointmentRepository";
+import { AppointmentConfirmedPublisher } from "../../infrastructure/services/AppointmentConfirmedPublisher";
 import { ProcessAppointmentPe } from "../../application/use-cases/ProcessAppointmentPe";
+import { Appointment } from "../../domain/entities/Appointment";
 
 export const handler = async (event: SQSEvent): Promise<void> => {
   const repo = new DynamoAppointmentRepository();
-  const useCase = new ProcessAppointmentPe(repo);
+  const publisher = new AppointmentConfirmedPublisher();
+  const useCase = new ProcessAppointmentPe(repo, publisher);
 
   for (const record of event.Records) {
     try {
@@ -54,12 +57,19 @@ export const handler = async (event: SQSEvent): Promise<void> => {
 
       console.log("📥 Mensaje recibido:", message);
 
-      await useCase.execute({
+      const appointment = new Appointment({
+        appointmentId: message.appointmentId,
         insuredId: message.insuredId,
+        scheduleId: message.scheduleId,
+        countryISO: message.countryISO,
+        status: "completed",
+        createdAt: message.createdAt,
       });
 
+      await useCase.execute(appointment);
+
       console.log(
-        "✅ Estado actualizado a 'completed' para:",
+        "✅ Estado actualizado y evento enviado para:",
         message.insuredId
       );
     } catch (err) {
