@@ -1,0 +1,50 @@
+{
+  "openapi": "3.0.0",
+  "components": {
+    "schemas": {
+      "CreateAppointmentRequest": {
+        "type": "object",
+        "properties": {
+          "insuredId": {
+            "type": "string",
+            "example": "00123"
+          },
+          "scheduleId": {
+            "type": "integer",
+            "example": 100
+          },
+          "countryISO": {
+            "type": "string",
+            "enum": [
+              "PE",
+              "CL"
+            ]
+          }
+        },
+        "required": [
+          "insuredId",
+          "scheduleId",
+          "countryISO"
+        ]
+      },
+      "AppointmentResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "pending"
+          }
+        }
+      }
+    }
+  },
+  "info": {
+    "title": "appointment-backend",
+    "description": "",
+    "version": "79e315d1-8edb-4622-bd08-548047207e9a"
+  },
+  "paths": {}
+}

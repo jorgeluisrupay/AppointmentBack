@@ -34,6 +34,43 @@ provider:
             - events:PutEvents
           Resource: "*"
 
+custom:
+  documentation:
+    api:
+      info:
+        version: "1.0.0"
+        title: "Appointment API"
+        description: "API para agendamiento de citas médicas"
+    models:
+      - name: CreateAppointmentRequest
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            insuredId:
+              type: string
+              example: "00123"
+            scheduleId:
+              type: integer
+              example: 100
+            countryISO:
+              type: string
+              enum: [PE, CL]
+          required: [insuredId, scheduleId, countryISO]
+
+      - name: AppointmentResponse
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            appointmentId:
+              type: string
+            status:
+              type: string
+              example: "pending"
+plugins:
+  - serverless-openapi-documenter
+
 functions:
   postAppointment:
     handler: src/interfaces/handlers/postAppointment.handler
@@ -41,6 +78,13 @@ functions:
       - http:
           path: appointments
           method: post
+    documentation:
+      summary: "Crear un appointment"
+      description: "Registra un nuevo appointment y lo envía a SNS"
+      requestModels:
+        "application/json": CreateAppointmentRequest
+      responseModels:
+        "application/json": AppointmentResponse
 
   getAppointments:
     handler: src/interfaces/handlers/getAppointments.handler
@@ -48,6 +92,16 @@ functions:
       - http:
           path: appointments/{insuredId}
           method: get
+    documentation:
+      summary: "Listar appointments"
+      description: "Obtiene los appointments de un asegurado"
+      pathParams:
+        - name: insuredId
+          description: "Código del asegurado"
+          required: true
+          type: string
+      responseModels:
+        "application/json": AppointmentResponse
 
   appointment_pe:
     handler: src/interfaces/handlers/appointment_pe.handler
@@ -130,3 +184,22 @@ resources:
               Condition:
                 ArnEquals:
                   aws:SourceArn: arn:aws:sns:us-east-2:759799978288:APPOINTMENT_TOPIC
+        
+    AppointmentConfirmedLogRule:
+      Type: AWS::Events::Rule
+      Properties:
+        Name: appointmentConfirmedRule
+        EventPattern:
+          source:
+            - "appointments.pe"
+          detail-type:
+            - "appointmentConfirmed"
+        Targets:
+          - Arn: !GetAtt AppointmentLogGroup.Arn
+            Id: "LogTarget"
+
+    AppointmentLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/events/appointmentConfirmed
+        RetentionInDays: 3

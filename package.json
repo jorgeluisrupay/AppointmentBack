@@ -21,6 +21,7 @@
     "jest": "^30.0.0",
     "serverless": "^4.17.0",
     "serverless-esbuild": "^1.55.1",
+    "serverless-openapi-documenter": "^0.0.113",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"
   }
